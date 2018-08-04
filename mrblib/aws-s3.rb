@@ -36,6 +36,17 @@ module AWS
       calculate_signature('PUT', path, headers)
     end
 
+    def head(path)
+      headers = {
+        'Body' => ''
+      }
+      calculate_signature('HEAD', path, headers)
+    end
+
+    def has_key?(path)
+      head(path).content_length > 0
+    end
+
     # private
     def calculate_signature(method, path, headers)
       method = method.upcase
@@ -57,10 +68,10 @@ module AWS
       canon_req += "#{HTTP::URL::encode(path).gsub('%2F', '/')}\n"
       canon_req += "\n" # queries
       header_keys = []
-      headers.keys.sort.each do |k|
+      canon_req += headers.keys.sort.inject('') do |acc, k|
         next if k == 'Body'
         header_keys.push(k.downcase)
-        canon_req += "#{header_keys.last}:#{headers[k].to_s.strip}\n"
+        "#{acc}#{header_keys.last}:#{headers[k].to_s.strip}\n"
       end
       canon_req += "\n#{header_keys.join(";")}"
       canon_req += "\n#{headers['x-amz-content-sha256']}"
